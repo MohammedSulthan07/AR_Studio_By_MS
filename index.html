@@ -256,30 +256,12 @@
                     <!-- Core Visual Container -->
                     <div class="flex-1 relative bg-slate-950 flex items-center justify-center p-2 overflow-hidden select-none" id="viewport-container">
                         
-                        <!-- Video Stream Element -->
+                        <!-- Video Stream Element (Naturally unmirrored for drawing) -->
                         <video id="webcam-stream" autoplay playsinline muted class="absolute inset-0 w-full h-full object-cover hidden"></video>
                         
                         <!-- AR Canvas overlay containing the extracted lines -->
                         <div id="canvas-wrapper" class="absolute pointer-events-auto cursor-grab active:cursor-grabbing max-w-full max-h-full aspect-square flex items-center justify-center transition-opacity duration-200" style="width: 100%; height: 100%;">
                             <canvas id="output-canvas" class="max-w-full max-h-full object-contain pointer-events-none drop-shadow-[0_0_15px_rgba(0,0,0,0.8)]"></canvas>
-                        </div>
-
-                        <!-- Visual Anchor Target Crosshair overlay -->
-                        <div id="ar-camera-crosshair" class="absolute inset-0 flex items-center justify-center pointer-events-none transition duration-300 opacity-0 hidden">
-                            <div class="relative flex items-center justify-center">
-                                <div class="w-8 h-8 border-2 border-dashed border-brand-400 rounded-full animate-spin"></div>
-                                <div class="absolute w-2 h-2 bg-brand-500 rounded-full"></div>
-                                <div class="absolute -top-6 text-[10px] bg-slate-950/80 px-2 py-0.5 rounded border border-slate-800 text-brand-400 font-semibold uppercase tracking-wider">Anchor Point</div>
-                            </div>
-                        </div>
-
-                        <!-- Active Anchoring tracking target marker -->
-                        <div id="ar-active-tracker" class="absolute pointer-events-none hidden transition-transform duration-75">
-                            <div class="relative -translate-x-1/2 -translate-y-1/2 flex items-center justify-center">
-                                <div id="ar-tracker-ring" class="w-10 h-10 border-2 border-emerald-500 rounded-full animate-pulse"></div>
-                                <div id="ar-tracker-dot" class="absolute w-2.5 h-2.5 bg-emerald-400 rounded-full shadow-lg shadow-emerald-500/50"></div>
-                                <div id="ar-tracker-text" class="absolute top-6 whitespace-nowrap text-[9px] bg-slate-950/90 text-emerald-400 font-bold px-1.5 py-0.5 rounded border border-emerald-500/20 uppercase tracking-widest">Anchored</div>
-                            </div>
                         </div>
 
                         <!-- Calibration / Drag Instructions Layer -->
@@ -310,22 +292,18 @@
                                     </div>
                                 </div>
                                 <!-- Bottom row: Reset, Mirror & Exit (Back) -->
-                                <div class="grid grid-cols-4 gap-2 pt-1.5 border-t border-slate-800/50 items-center">
-                                    <button type="button" id="fs-reset-btn" class="p-2 bg-slate-900 hover:bg-slate-800 border border-slate-800 rounded-lg text-slate-300 hover:text-white text-[11px] font-semibold transition flex items-center justify-center gap-1 touch-active">
+                                <div class="flex items-center justify-between gap-2 pt-1.5 border-t border-slate-800/50">
+                                    <button type="button" id="fs-reset-btn" class="p-2 bg-slate-900 hover:bg-slate-800 border border-slate-800 rounded-lg text-slate-300 hover:text-white text-[11px] font-semibold transition flex items-center gap-1 touch-active">
                                         <i data-lucide="maximize" class="w-3 h-3"></i>
-                                        Center
+                                        Center Design
                                     </button>
-                                    <button type="button" id="fs-mirror-btn" class="p-2 bg-slate-900 hover:bg-slate-800 border border-slate-800 rounded-lg text-slate-300 hover:text-white text-[11px] font-semibold transition flex items-center justify-center gap-1 touch-active">
+                                    <button type="button" id="fs-mirror-btn" class="p-2 bg-slate-900 hover:bg-slate-800 border border-slate-800 rounded-lg text-slate-300 hover:text-white text-[11px] font-semibold transition flex items-center gap-1 touch-active">
                                         <i data-lucide="arrow-left-right" class="w-3 h-3"></i>
-                                        Flip
+                                        Flip Horizontally
                                     </button>
-                                    <button type="button" id="fs-lock-btn" class="p-2 bg-indigo-650 hover:bg-indigo-600 border border-indigo-700/50 text-white rounded-lg text-[11px] font-bold transition flex items-center justify-center gap-1 touch-active">
-                                        <i data-lucide="pin" class="w-3 h-3"></i>
-                                        <span id="fs-lock-btn-text">LOCK AR</span>
-                                    </button>
-                                    <button type="button" id="fs-exit-btn" class="p-2 bg-red-950/40 hover:bg-red-900/40 border border-red-900/30 text-red-400 hover:text-red-300 rounded-lg text-[11px] font-bold transition flex items-center justify-center gap-1.5 touch-active">
+                                    <button type="button" id="fs-exit-btn" class="p-2 bg-red-950/40 hover:bg-red-900/40 border border-red-900/30 text-red-400 hover:text-red-300 rounded-lg text-[11px] font-bold transition flex items-center gap-1.5 ml-auto touch-active">
                                         <i data-lucide="arrow-left" class="w-3.5 h-3.5"></i>
-                                        Exit
+                                        Exit Full Screen
                                     </button>
                                 </div>
                             </div>
@@ -373,7 +351,7 @@
 
                         <!-- Calibration Fine-tunes (Reset position, Mirror flip) -->
                         <div class="flex flex-wrap items-center justify-between gap-3 pt-1 border-t border-slate-900/50">
-                            <div class="flex items-center gap-3 flex-wrap">
+                            <div class="flex items-center gap-2">
                                 <button type="button" id="reset-position-btn" class="p-2 bg-slate-900 hover:bg-slate-800 border border-slate-800 rounded-lg text-slate-300 hover:text-white text-xs font-bold transition flex items-center gap-1.5 touch-active" title="Center overlay design">
                                     <i data-lucide="maximize" class="w-3.5 h-3.5"></i>
                                     Center Template
@@ -381,12 +359,6 @@
                                 <button type="button" id="mirror-btn" class="p-2 bg-slate-900 hover:bg-slate-800 border border-slate-800 rounded-lg text-slate-300 hover:text-white text-xs font-bold transition flex items-center gap-1.5 touch-active" title="Flip template sideways">
                                     <i data-lucide="arrow-left-right" class="w-3.5 h-3.5"></i>
                                     Flip Horizontal
-                                </button>
-                                
-                                <!-- Locking trigger in normal view -->
-                                <button type="button" id="lock-ar-btn" class="hidden p-2 bg-indigo-650 hover:bg-indigo-600 border border-indigo-700/50 text-white rounded-lg text-xs font-bold transition flex items-center gap-1.5 touch-active" title="Anchor tracing layout to physical spot">
-                                    <i data-lucide="pin" class="w-3.5 h-3.5"></i>
-                                    <span id="lock-btn-text">LOCK AR</span>
                                 </button>
                             </div>
                             
@@ -413,13 +385,12 @@
                         <i data-lucide="help-circle" class="w-5 h-5"></i>
                     </div>
                     <div>
-                        <h4 class="text-xs font-bold text-slate-200">AR Anchor Setup Guide:</h4>
+                        <h4 class="text-xs font-bold text-slate-200">AR Setup Guide:</h4>
                         <ul class="list-disc list-inside text-[11px] text-slate-400 mt-1.5 space-y-1">
-                            <li>Keep your physical paper flat under the camera view.</li>
-                            <li>Place a clear high-contrast mark or a piece of drawing near the center.</li>
-                            <li>Click **LOCK AR**. A green tracker will anchor to the paper.</li>
-                            <li>Move your phone around; the template will remain anchored to that exact spot!</li>
-                            <li>Drag the template on the screen at any time to unlock and reset.</li>
+                            <li>Place your physical paper flat under your phone/tablet setup.</li>
+                            <li>Mount your phone/tablet on a stand, glass, or tall cup facing downward.</li>
+                            <li>Align the live paper with the digital trace lines using your screen controls.</li>
+                            <li>Trace lines directly on the physical paper through your screen viewport.</li>
                         </ul>
                     </div>
                 </div>
@@ -454,28 +425,8 @@
             overlayMirrored: false,
             isDragging: false,
             startX: 0,
-            startY: 0,
-            
-            // Camera tracking engine states
-            isLocked: false,
-            anchorPatch: null, // Grayscale pixel data of template patch
-            lastAnchorX: 0, // x coordinate in tracking-canvas system
-            lastAnchorY: 0, // y coordinate in tracking-canvas system
-            lockOffsetDistX: 0, // original distance from anchor center to drawing X
-            lockOffsetDistY: 0  // original distance from anchor center to drawing Y
+            startY: 0
         };
-
-        // Custom tracking configurations
-        const TRACK_WIDTH = 320;
-        const TRACK_HEIGHT = 240;
-        const PATCH_SIZE = 32;
-        const SEARCH_RADIUS = 24;
-
-        // Create highly optimized offscreen tracking context
-        const trackingCanvas = document.createElement('canvas');
-        trackingCanvas.width = TRACK_WIDTH;
-        trackingCanvas.height = TRACK_HEIGHT;
-        const trackingCtx = trackingCanvas.getContext('2d', { willReadFrequently: true });
 
         // --- CORE HTML ELEMENTS ---
         const dropZone = document.getElementById('drop-zone');
@@ -518,15 +469,6 @@
         const activateArBtn = document.getElementById('activate-ar-btn');
         const cameraBtnText = document.getElementById('camera-btn-text');
         
-        // Locking Controls
-        const lockArBtn = document.getElementById('lock-ar-btn');
-        const lockBtnText = document.getElementById('lock-btn-text');
-        const arCameraCrosshair = document.getElementById('ar-camera-crosshair');
-        const arActiveTracker = document.getElementById('ar-active-tracker');
-        const arTrackerRing = document.getElementById('ar-tracker-ring');
-        const arTrackerDot = document.getElementById('ar-tracker-dot');
-        const arTrackerText = document.getElementById('ar-tracker-text');
-        
         // Fullscreen Elements
         const fullscreenBtn = document.getElementById('fullscreen-btn');
         const fullscreenHud = document.getElementById('fullscreen-hud');
@@ -534,8 +476,6 @@
         const fsTransparencyBadge = document.getElementById('fs-transparency-badge');
         const fsResetBtn = document.getElementById('fs-reset-btn');
         const fsMirrorBtn = document.getElementById('fs-mirror-btn');
-        const fsLockBtn = document.getElementById('fs-lock-btn');
-        const fsLockBtnText = document.getElementById('fs-lock-btn-text');
         const fsExitBtn = document.getElementById('fs-exit-btn');
 
         // Step-Indicators
@@ -560,10 +500,6 @@
             setupARControlListeners();
             setupInteractiveDragListeners();
             setupFullscreenListeners();
-            setupLockEngineListeners();
-            
-            // Initiate core camera tracking loop
-            requestAnimationFrame(processTrackingLoop);
         });
 
         // --- STEP WIZARD NAVIGATION UI ---
@@ -977,7 +913,6 @@
         }
 
         function resetARScale() {
-            unlockARAnchor();
             AppState.overlayScale = 1.0;
             AppState.overlayX = 0;
             AppState.overlayY = 0;
@@ -1023,12 +958,6 @@
                     interactionHelper.classList.remove('hidden');
                     interactionHelper.classList.add('opacity-100');
                     fullscreenBtn.classList.remove('hidden');
-                    lockArBtn.classList.remove('hidden');
-                    
-                    // Show center crosshair so the user knows where the anchor tracks
-                    arCameraCrosshair.classList.remove('hidden');
-                    setTimeout(() => arCameraCrosshair.classList.add('opacity-40'), 10);
-                    
                     canvasStatusText.innerText = "Active Camera Blend Mode";
                     
                     AppState.isCameraOn = true;
@@ -1043,7 +972,6 @@
                 canvasLoader.classList.add('hidden');
                 cameraBtnText.innerText = "Start Camera Mode";
                 fullscreenBtn.classList.add('hidden');
-                lockArBtn.classList.add('hidden');
                 
                 let feedbackMessage = "Camera initialization blocked. Please allow permissions in your system settings.";
                 if (error.name === 'NotFoundError' || error.name === 'DevicesNotFoundError') {
@@ -1057,8 +985,6 @@
         }
 
         function stopCameraStream() {
-            unlockARAnchor();
-            
             if (AppState.cameraStream) {
                 const tracks = AppState.cameraStream.getTracks();
                 tracks.forEach(track => track.stop());
@@ -1070,9 +996,6 @@
             interactionHelper.classList.add('hidden');
             interactionHelper.classList.remove('opacity-100');
             fullscreenBtn.classList.add('hidden');
-            lockArBtn.classList.add('hidden');
-            arCameraCrosshair.classList.add('hidden');
-            arCameraCrosshair.classList.remove('opacity-40');
             canvasStatusText.innerText = "Sketch Ready for AR Overlay";
 
             AppState.isCameraOn = false;
@@ -1144,212 +1067,6 @@
             }
         }
 
-        // --- HIGH-PERFORMANCE AR MAPPING & ANCHORING ENGINE ---
-        function setupLockEngineListeners() {
-            lockArBtn.addEventListener('click', toggleARAnchorLock);
-            fsLockBtn.addEventListener('click', toggleARAnchorLock);
-        }
-
-        function toggleARAnchorLock() {
-            if (!AppState.isCameraOn) {
-                showToast("Please enable camera feed to use AR Anchoring.");
-                return;
-            }
-
-            if (AppState.isLocked) {
-                unlockARAnchor();
-            } else {
-                lockARAnchor();
-            }
-        }
-
-        function lockARAnchor() {
-            try {
-                // Draw current video stream frame to tracking canvas
-                trackingCtx.drawImage(webcamStream, 0, 0, TRACK_WIDTH, TRACK_HEIGHT);
-                
-                // Set lock coordinates directly to center of tracking canvas
-                const centerX = TRACK_WIDTH / 2;
-                const centerY = TRACK_HEIGHT / 2;
-                
-                const frameData = trackingCtx.getImageData(centerX - PATCH_SIZE / 2, centerY - PATCH_SIZE / 2, PATCH_SIZE, PATCH_SIZE);
-                const grayPatch = new Uint8Array(PATCH_SIZE * PATCH_SIZE);
-                
-                // Convert center patch to lightweight grayscale reference
-                for (let i = 0; i < frameData.data.length; i += 4) {
-                    const r = frameData.data[i];
-                    const g = frameData.data[i+1];
-                    const b = frameData.data[i+2];
-                    grayPatch[i / 4] = 0.299 * r + 0.587 * g + 0.114 * b;
-                }
-                
-                AppState.anchorPatch = grayPatch;
-                AppState.lastAnchorX = centerX;
-                AppState.lastAnchorY = centerY;
-                
-                // Determine scale of current screen display vs tracking space
-                const scaleFactorX = viewportContainer.clientWidth / TRACK_WIDTH;
-                const scaleFactorY = viewportContainer.clientHeight / TRACK_HEIGHT;
-                
-                // Calculate original offset distance from anchor center (screen coord) to drawing X & Y
-                const currentAnchorScreenX = centerX * scaleFactorX;
-                const currentAnchorScreenY = centerY * scaleFactorY;
-                
-                AppState.lockOffsetDistX = AppState.overlayX - currentAnchorScreenX;
-                AppState.lockOffsetDistY = AppState.overlayY - currentAnchorScreenY;
-                
-                AppState.isLocked = true;
-                
-                // Update UI state
-                lockArBtn.classList.replace('bg-indigo-650', 'bg-red-600');
-                lockArBtn.classList.replace('hover:bg-indigo-600', 'hover:bg-red-500');
-                lockBtnText.innerText = "UNLOCK AR";
-                
-                fsLockBtn.classList.replace('bg-indigo-650', 'bg-red-600');
-                fsLockBtn.classList.replace('hover:bg-indigo-600', 'hover:bg-red-500');
-                fsLockBtnText.innerText = "UNLOCK";
-
-                arActiveTracker.classList.remove('hidden');
-                arCameraCrosshair.classList.add('hidden'); // Hide template builder crosshair
-                
-                showToast("AR Anchor Locked. Try moving camera slightly; template will hold position!");
-                lucide.createIcons();
-            } catch (err) {
-                console.error("Anchoring setup failed: ", err);
-                showToast("Failed to acquire spatial tracking anchor in this scene.");
-            }
-        }
-
-        function unlockARAnchor() {
-            if (!AppState.isLocked) return;
-            AppState.isLocked = false;
-            AppState.anchorPatch = null;
-            
-            // Revert Buttons to Lock state
-            lockArBtn.classList.replace('bg-red-600', 'bg-indigo-650');
-            lockArBtn.classList.replace('hover:bg-red-500', 'hover:bg-indigo-600');
-            lockBtnText.innerText = "LOCK AR";
-            
-            fsLockBtn.classList.replace('bg-red-600', 'bg-indigo-650');
-            fsLockBtn.classList.replace('hover:bg-red-500', 'hover:bg-indigo-600');
-            fsLockBtnText.innerText = "LOCK AR";
-
-            arActiveTracker.classList.add('hidden');
-            if (AppState.isCameraOn) {
-                arCameraCrosshair.classList.remove('hidden');
-            }
-            lucide.createIcons();
-        }
-
-        // Core 60fps tracking engine loop
-        function processTrackingLoop() {
-            if (AppState.isCameraOn && AppState.isLocked && AppState.anchorPatch) {
-                try {
-                    // Update current tracking canvas frame
-                    trackingCtx.drawImage(webcamStream, 0, 0, TRACK_WIDTH, TRACK_HEIGHT);
-                    
-                    const frameData = trackingCtx.getImageData(0, 0, TRACK_WIDTH, TRACK_HEIGHT);
-                    const frameGray = new Uint8Array(TRACK_WIDTH * TRACK_HEIGHT);
-                    
-                    for (let i = 0; i < frameData.data.length; i += 4) {
-                        frameGray[i / 4] = 0.299 * frameData.data[i] + 0.587 * frameData.data[i+1] + 0.114 * frameData.data[i+2];
-                    }
-                    
-                    // Localized Search Window centering around last known anchor position
-                    let minSAD = Infinity;
-                    let bestX = AppState.lastAnchorX;
-                    let bestY = AppState.lastAnchorY;
-                    
-                    const halfPatch = PATCH_SIZE / 2;
-                    const startX = Math.max(halfPatch, AppState.lastAnchorX - SEARCH_RADIUS);
-                    const endX = Math.min(TRACK_WIDTH - halfPatch, AppState.lastAnchorX + SEARCH_RADIUS);
-                    const startY = Math.max(halfPatch, AppState.lastAnchorY - SEARCH_RADIUS);
-                    const endY = Math.min(TRACK_HEIGHT - halfPatch, AppState.lastAnchorY + SEARCH_RADIUS);
-                    
-                    const patch = AppState.anchorPatch;
-                    
-                    for (let sy = startY; sy < endY; sy++) {
-                        for (let sx = startX; sx < endX; sx++) {
-                            let sad = 0;
-                            let breakEarly = false;
-                            
-                            // Iterate SAD (Sum of Absolute Differences) patch comparison
-                            for (let py = 0; py < PATCH_SIZE; py++) {
-                                const fRowOffset = (sy - halfPatch + py) * TRACK_WIDTH;
-                                const pRowOffset = py * PATCH_SIZE;
-                                
-                                for (let px = 0; px < PATCH_SIZE; px++) {
-                                    const fIdx = fRowOffset + (sx - halfPatch + px);
-                                    const pIdx = pRowOffset + px;
-                                    
-                                    const diff = frameGray[fIdx] - patch[pIdx];
-                                    sad += diff < 0 ? -diff : diff;
-                                }
-                                
-                                if (sad >= minSAD) {
-                                    breakEarly = true;
-                                    break; // Skip unpromising tracking branches
-                                }
-                            }
-                            
-                            if (!breakEarly && sad < minSAD) {
-                                minSAD = sad;
-                                bestX = sx;
-                                bestY = sy;
-                            }
-                        }
-                    }
-                    
-                    // Update Anchor target points in system state
-                    AppState.lastAnchorX = bestX;
-                    AppState.lastAnchorY = bestY;
-                    
-                    // Map local tracking canvas coordinate to standard CSS viewport bounds
-                    const scaleFactorX = viewportContainer.clientWidth / TRACK_WIDTH;
-                    const scaleFactorY = viewportContainer.clientHeight / TRACK_HEIGHT;
-                    
-                    const currentAnchorScreenX = bestX * scaleFactorX;
-                    const currentAnchorScreenY = bestY * scaleFactorY;
-                    
-                    // Update layout drawing offset coordinates cleanly with structural offsets
-                    AppState.overlayX = currentAnchorScreenX + AppState.lockOffsetDistX;
-                    AppState.overlayY = currentAnchorScreenY + AppState.lockOffsetDistY;
-                    updateCanvasTransformations();
-                    
-                    // Position the floating green visualizer
-                    arActiveTracker.style.left = `${currentAnchorScreenX}px`;
-                    arActiveTracker.style.top = `${currentAnchorScreenY}px`;
-                    
-                    // Quality Diagnosis: If SAD is high, tracking is poor/obscured
-                    const avgPixelDiff = minSAD / (PATCH_SIZE * PATCH_SIZE);
-                    if (avgPixelDiff > 35) {
-                        // Display Warning: Lost Tracking indicator
-                        arTrackerRing.className = "w-10 h-10 border-2 border-red-500 rounded-full animate-ping";
-                        arTrackerDot.className = "absolute w-2.5 h-2.5 bg-red-500 rounded-full shadow-lg shadow-red-500/50";
-                        arTrackerText.innerText = "Tracking Lost";
-                        arTrackerText.className = "absolute top-6 whitespace-nowrap text-[9px] bg-slate-950/90 text-red-500 font-bold px-1.5 py-0.5 rounded border border-red-500/20 uppercase tracking-widest";
-                    } else if (avgPixelDiff > 22) {
-                        // Warning: Low Confidence tracking
-                        arTrackerRing.className = "w-10 h-10 border-2 border-amber-500 rounded-full animate-pulse";
-                        arTrackerDot.className = "absolute w-2.5 h-2.5 bg-amber-500 rounded-full shadow-lg shadow-amber-500/50";
-                        arTrackerText.innerText = "Calibrating";
-                        arTrackerText.className = "absolute top-6 whitespace-nowrap text-[9px] bg-slate-950/90 text-amber-500 font-bold px-1.5 py-0.5 rounded border border-amber-500/20 uppercase tracking-widest";
-                    } else {
-                        // High quality track
-                        arTrackerRing.className = "w-10 h-10 border-2 border-emerald-500 rounded-full animate-pulse";
-                        arTrackerDot.className = "absolute w-2.5 h-2.5 bg-emerald-400 rounded-full shadow-lg shadow-emerald-500/50";
-                        arTrackerText.innerText = "Anchored";
-                        arTrackerText.className = "absolute top-6 whitespace-nowrap text-[9px] bg-slate-950/90 text-emerald-400 font-bold px-1.5 py-0.5 rounded border border-emerald-500/20 uppercase tracking-widest";
-                    }
-                    
-                } catch (err) {
-                    console.warn("Tracking loop frame dropped: ", err);
-                }
-            }
-            
-            requestAnimationFrame(processTrackingLoop);
-        }
-
         // --- AR VIEWPORT SPATIAL INTERACTIONS (PAN / PINCH / MOUSEWHEEL) ---
         function setupInteractiveDragListeners() {
             const container = viewportContainer;
@@ -1357,12 +1074,6 @@
 
             container.addEventListener('touchstart', (e) => {
                 if (AppState.currentStep < 3) return;
-
-                // Dragging template breaks lock for natural realignment UX
-                if (AppState.isLocked) {
-                    unlockARAnchor();
-                    showToast("Repositioning... AR Anchor released.");
-                }
 
                 if (e.touches.length === 1) {
                     AppState.isDragging = true;
@@ -1399,11 +1110,6 @@
 
             container.addEventListener('mousedown', (e) => {
                 if (AppState.currentStep < 3) return;
-                
-                if (AppState.isLocked) {
-                    unlockARAnchor();
-                    showToast("Repositioning... AR Anchor released.");
-                }
 
                 AppState.isDragging = true;
                 AppState.startX = e.clientX - AppState.overlayX;
@@ -1424,10 +1130,6 @@
             container.addEventListener('wheel', (e) => {
                 if (AppState.currentStep < 3) return;
                 e.preventDefault();
-                
-                if (AppState.isLocked) {
-                    unlockARAnchor();
-                }
 
                 const scaleFactor = 0.08;
                 if (e.deltaY < 0) {
