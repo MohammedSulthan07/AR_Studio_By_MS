@@ -256,8 +256,8 @@
                     <!-- Core Visual Container -->
                     <div class="flex-1 relative bg-slate-950 flex items-center justify-center p-2 overflow-hidden select-none" id="viewport-container">
                         
-                        <!-- Video Stream Element -->
-                        <video id="webcam-stream" autoplay playsinline muted class="absolute inset-0 w-full h-full object-cover hidden scale-x-[-1]"></video>
+                        <!-- Video Stream Element (No longer mirrored to keep hand movements naturally oriented) -->
+                        <video id="webcam-stream" autoplay playsinline muted class="absolute inset-0 w-full h-full object-cover hidden"></video>
                         
                         <!-- AR Canvas overlay containing the extracted lines -->
                         <div id="canvas-wrapper" class="absolute pointer-events-auto cursor-grab active:cursor-grabbing max-w-full max-h-full aspect-square flex items-center justify-center transition-opacity duration-200" style="width: 100%; height: 100%;">
@@ -906,6 +906,7 @@
             }
         }
 
+        // --- ACTIVATING INTERACTIVE HUD ---
         function showActiveARControls() {
             arOverlayControls.classList.remove('hidden');
             canvasStatusText.innerText = "Sketch Ready for AR Overlay";
@@ -1109,6 +1110,7 @@
             resetARScale();
         }
 
+        // Sync native triggers (e.g., system swipe-down exits on Android)
         function syncNativeFullscreenExit() {
             const isNativeFSActive = document.fullscreenElement || document.webkitFullscreenElement;
             if (!isNativeFSActive && AppState.isFullscreen) {
