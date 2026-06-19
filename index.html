@@ -1,0 +1,1068 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>AR Drawing & Tracing Studio</title>
+    <!-- Tailwind CSS for modern rapid layouts -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons for premium visual cues -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#eef2ff',
+                            100: '#e0e7ff',
+                            500: '#6366f1',
+                            600: '#4f46e5',
+                            700: '#4338ca',
+                            900: '#312e81',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Hide scrollbars for a cleaner immersive feel */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #1f2937;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #4b5563;
+            border-radius: 3px;
+        }
+        /* Mobile-friendly active states */
+        .touch-active:active {
+            transform: scale(0.97);
+            transition: transform 0.1s ease;
+        }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col font-sans overflow-x-hidden antialiased selection:bg-brand-500 selection:text-white">
+
+    <!-- App Header -->
+    <header class="border-b border-slate-900 bg-slate-950/80 backdrop-blur-md sticky top-0 z-50 px-4 py-3 flex items-center justify-between">
+        <div class="flex items-center gap-2.5">
+            <div class="bg-gradient-to-tr from-brand-600 to-indigo-500 p-2 rounded-xl shadow-lg shadow-brand-500/20">
+                <i data-lucide="sparkles" class="w-5 h-5 text-white"></i>
+            </div>
+            <div>
+                <h1 class="text-base font-bold tracking-tight bg-gradient-to-r from-white to-slate-400 bg-clip-text text-transparent">AR Studio By Mohammed Sulthan G</h1>
+                <p class="text-[10px] text-slate-500 font-medium tracking-wider uppercase">Camera Tracing Engine</p>
+            </div>
+        </div>
+        <div class="flex items-center gap-2">
+            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                Web AR ready
+            </span>
+        </div>
+    </header>
+
+    <main class="flex-1 flex flex-col max-w-4xl mx-auto w-full p-4 gap-6">
+
+        <!-- Error & Alert Toast System (Self-contained Custom Modals instead of blocking alerts) -->
+        <div id="toast-container" class="fixed top-4 left-1/2 -translate-x-1/2 z-50 w-full max-w-sm px-4 pointer-events-none transition-all duration-300 transform translate-y-[-20px] opacity-0 hidden">
+            <div class="bg-slate-900 border-2 border-red-500/40 text-red-200 p-4 rounded-2xl shadow-2xl shadow-red-950/50 pointer-events-auto flex gap-3 items-start">
+                <div class="bg-red-500/20 text-red-400 p-2 rounded-lg shrink-0">
+                    <i data-lucide="alert-triangle" class="w-5 h-5"></i>
+                </div>
+                <div class="flex-1">
+                    <h4 class="font-bold text-sm text-white">Action Required</h4>
+                    <p id="toast-message" class="text-xs text-slate-300 mt-1 leading-relaxed">Something went wrong.</p>
+                </div>
+                <button onclick="hideToast()" class="text-slate-400 hover:text-white transition p-1">
+                    <i data-lucide="x" class="w-4 h-4"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Mode Indicator / Multi-step Progress bar -->
+        <div class="bg-slate-900/60 border border-slate-900 rounded-2xl p-4 flex justify-between items-center text-xs">
+            <div class="flex items-center gap-2 flex-1 justify-center py-1 rounded-lg" id="step-1-indicator">
+                <div class="w-6 h-6 rounded-full bg-brand-600 flex items-center justify-center font-bold text-white text-[11px]" id="step-1-badge">1</div>
+                <span class="font-semibold text-white" id="step-1-text">Upload Image</span>
+            </div>
+            <div class="w-8 h-[2px] bg-slate-800 shrink-0 mx-2" id="step-line-1"></div>
+            <div class="flex items-center gap-2 flex-1 justify-center py-1 rounded-lg opacity-40" id="step-2-indicator">
+                <div class="w-6 h-6 rounded-full bg-slate-800 flex items-center justify-center font-bold text-slate-400 text-[11px]" id="step-2-badge">2</div>
+                <span class="font-semibold text-slate-400" id="step-2-text">Extract Lines</span>
+            </div>
+            <div class="w-8 h-[2px] bg-slate-800 shrink-0 mx-2" id="step-line-2"></div>
+            <div class="flex items-center gap-2 flex-1 justify-center py-1 rounded-lg opacity-40" id="step-3-indicator">
+                <div class="w-6 h-6 rounded-full bg-slate-800 flex items-center justify-center font-bold text-slate-400 text-[11px]" id="step-3-badge">3</div>
+                <span class="font-semibold text-slate-400" id="step-3-text">AR Trace Mode</span>
+            </div>
+        </div>
+
+        <!-- MAIN INTERACTIVE SECTION -->
+        <div class="grid grid-cols-1 md:grid-cols-12 gap-6 items-stretch">
+            
+            <!-- Left Control Panel: Upload, Configure, & Process -->
+            <div class="md:col-span-5 flex flex-col gap-5">
+                
+                <!-- Upload Box -->
+                <div class="bg-slate-900/80 border border-slate-900 rounded-2xl p-5 flex flex-col gap-4 shadow-xl">
+                    <div class="flex items-center gap-2">
+                        <i data-lucide="image" class="w-4 h-4 text-brand-400"></i>
+                        <h2 class="text-sm font-bold uppercase tracking-wider text-slate-300">Image Input Source</h2>
+                    </div>
+
+                    <!-- File Drop Area -->
+                    <label id="drop-zone" class="border-2 border-dashed border-slate-800 hover:border-brand-500/50 bg-slate-950/50 hover:bg-slate-950/80 transition-all rounded-xl p-6 flex flex-col items-center justify-center gap-3 cursor-pointer group text-center relative overflow-hidden">
+                        <input type="file" id="image-upload" accept="image/*" class="hidden" />
+                        
+                        <!-- Initial State -->
+                        <div id="upload-prompt" class="flex flex-col items-center justify-center gap-2">
+                            <div class="w-12 h-12 rounded-xl bg-slate-900 flex items-center justify-center group-hover:scale-110 group-hover:bg-brand-950/40 group-hover:text-brand-400 transition text-slate-400">
+                                <i data-lucide="cloud-upload" class="w-6 h-6"></i>
+                            </div>
+                            <div>
+                                <span class="text-xs font-bold text-brand-400 group-hover:text-brand-300 block">Choose an Image</span>
+                                <span class="text-[10px] text-slate-500 mt-1 block">Supports JPG, PNG, WEBP</span>
+                            </div>
+                        </div>
+
+                        <!-- Mini thumbnail shown after load -->
+                        <div id="upload-preview-container" class="hidden w-full flex flex-col items-center gap-2 relative z-10">
+                            <div class="relative max-w-[140px] max-h-[140px] rounded-lg overflow-hidden border border-slate-800 shadow-md">
+                                <img id="uploaded-img-preview" class="object-contain w-full h-full" alt="Source Preview" />
+                            </div>
+                            <span class="text-xs text-brand-400 font-semibold flex items-center gap-1">
+                                <i data-lucide="check" class="w-3.5 h-3.5"></i> Change Image
+                            </span>
+                        </div>
+                    </label>
+
+                    <div id="file-info" class="text-[11px] text-slate-500 flex justify-between items-center hidden">
+                        <span id="file-name" class="truncate max-w-[150px]">No file</span>
+                        <span id="file-size">0 KB</span>
+                    </div>
+                </div>
+
+                <!-- Outline Extraction Configurations -->
+                <div id="processing-controls-box" class="bg-slate-900/80 border border-slate-900 rounded-2xl p-5 flex flex-col gap-4 shadow-xl opacity-50 pointer-events-none transition-opacity duration-300">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-2">
+                            <i data-lucide="sliders-horizontal" class="w-4 h-4 text-brand-400"></i>
+                            <h2 class="text-sm font-bold uppercase tracking-wider text-slate-300">Line Extraction</h2>
+                        </div>
+                        <span class="text-[10px] bg-slate-800 text-slate-400 font-bold px-2 py-0.5 rounded-full">Adjustable</span>
+                    </div>
+
+                    <!-- Edge Detection Controls -->
+                    <div class="space-y-4">
+                        <!-- Threshold / Contrast Slider -->
+                        <div class="space-y-1.5">
+                            <div class="flex justify-between text-xs font-medium text-slate-400">
+                                <span>Edge Contrast Threshold</span>
+                                <span id="threshold-val" class="font-bold text-brand-400">120</span>
+                            </div>
+                            <input type="range" id="threshold-slider" min="30" max="220" value="120" class="w-full h-1 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-brand-500">
+                            <div class="flex justify-between text-[9px] text-slate-600">
+                                <span>Catch More Lines</span>
+                                <span>Bold Only</span>
+                            </div>
+                        </div>
+
+                        <!-- Stroke Weight / Thickness -->
+                        <div class="space-y-1.5">
+                            <div class="flex justify-between text-xs font-medium text-slate-400">
+                                <span>Line Detail Smoothing</span>
+                                <span id="smooth-val" class="font-bold text-brand-400">Enabled</span>
+                            </div>
+                            <div class="grid grid-cols-2 gap-2">
+                                <button type="button" id="smoothing-on" class="px-3 py-1.5 rounded-lg border-2 border-brand-500 bg-brand-950/20 text-xs font-bold text-brand-300 transition-all">Smooth</button>
+                                <button type="button" id="smoothing-off" class="px-3 py-1.5 rounded-lg border border-slate-800 bg-slate-950 text-xs font-bold text-slate-500 hover:text-slate-300 hover:border-slate-700 transition-all">Sharp Edges</button>
+                            </div>
+                        </div>
+
+                        <!-- Process CTA -->
+                        <button id="process-cta-btn" class="w-full bg-gradient-to-r from-brand-600 to-indigo-600 hover:from-brand-500 hover:to-indigo-500 text-white font-bold text-sm py-3 px-4 rounded-xl shadow-lg shadow-brand-600/20 hover:shadow-brand-500/30 transition duration-200 flex items-center justify-center gap-2 touch-active">
+                            <i data-lucide="cpu" class="w-4 h-4"></i>
+                            Extract Sketch Outlines
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Suitability Report Diagnostic Box -->
+                <div id="suitability-box" class="bg-slate-900/80 border border-slate-900 rounded-2xl p-4 flex flex-col gap-3 shadow-xl hidden transition-all duration-300">
+                    <div class="flex items-center gap-2">
+                        <i data-lucide="shield-check" id="suitability-icon" class="w-4 h-4 text-emerald-400"></i>
+                        <h3 class="text-xs font-bold uppercase tracking-wider text-slate-300">Trace Compatibility</h3>
+                    </div>
+                    
+                    <div class="bg-slate-950 p-3 rounded-xl border border-slate-900 space-y-2">
+                        <div class="flex items-center justify-between text-xs">
+                            <span class="text-slate-400">Outline Density:</span>
+                            <span id="suitability-density" class="font-mono font-bold text-white">0.0%</span>
+                        </div>
+                        <div class="flex items-center justify-between text-xs">
+                            <span class="text-slate-400">Diagnosis Quality:</span>
+                            <span id="suitability-verdict" class="font-bold text-emerald-400">Perfect</span>
+                        </div>
+                        <!-- Progress Visualizer for Density -->
+                        <div class="w-full bg-slate-900 h-1.5 rounded-full overflow-hidden">
+                            <div id="suitability-bar" class="bg-emerald-500 h-full w-0 transition-all duration-500"></div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Right Preview & Canvas Sandbox -->
+            <div class="md:col-span-7 flex flex-col gap-4">
+
+                <!-- Primary Drawing Preview / Camera / Overlay Sandbox -->
+                <div class="bg-slate-900/80 border border-slate-900 rounded-2xl overflow-hidden shadow-2xl relative flex flex-col min-h-[380px] md:min-h-[500px]">
+                    
+                    <!-- Sandbox Top Bar -->
+                    <div class="bg-slate-950 px-4 py-2.5 flex items-center justify-between border-b border-slate-900 text-xs">
+                        <div class="flex items-center gap-2 font-semibold text-slate-300">
+                            <span class="w-2 h-2 rounded-full bg-brand-500"></span>
+                            <span id="canvas-status-text">Drawing Sandbox</span>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <span id="camera-state-badge" class="hidden text-slate-500 font-mono text-[10px] flex items-center gap-1">
+                                <span class="w-1.5 h-1.5 bg-red-500 rounded-full animate-ping"></span> Live Camera
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Core Visual Container -->
+                    <div class="flex-1 relative bg-slate-950 flex items-center justify-center p-2 overflow-hidden select-none" id="viewport-container">
+                        
+                        <!-- Video Stream Element (Behind the transparent canvas) -->
+                        <video id="webcam-stream" autoplay playsinline muted class="absolute inset-0 w-full h-full object-cover hidden scale-x-[-1]"></video>
+                        
+                        <!-- AR Canvas overlay containing the extracted lines -->
+                        <div id="canvas-wrapper" class="absolute pointer-events-auto cursor-grab active:cursor-grabbing max-w-full max-h-full aspect-square flex items-center justify-center transition-opacity duration-200" style="width: 100%; height: 100%;">
+                            <canvas id="output-canvas" class="max-w-full max-h-full object-contain pointer-events-none drop-shadow-[0_0_15px_rgba(0,0,0,0.8)]"></canvas>
+                        </div>
+
+                        <!-- Calibration / Drag Instructions Layer (Appears once AR active) -->
+                        <div id="interaction-helper" class="absolute bottom-4 left-4 right-4 bg-slate-950/90 backdrop-blur border border-slate-800 rounded-xl p-3 text-center pointer-events-none transition opacity-0 hidden">
+                            <p class="text-[10px] text-slate-300 font-medium flex items-center justify-center gap-2">
+                                <i data-lucide="move" class="w-3.5 h-3.5 text-brand-400"></i>
+                                Touch & drag overlay to position. Use wheel/pinch to resize.
+                            </p>
+                        </div>
+
+                        <!-- Empty Welcome / Placeholder State -->
+                        <div id="empty-state" class="absolute inset-0 flex flex-col items-center justify-center gap-4 text-center px-6">
+                            <div class="w-16 h-16 rounded-full bg-slate-900 border border-slate-800 flex items-center justify-center text-slate-500 mb-2">
+                                <i data-lucide="sparkles" class="w-8 h-8"></i>
+                            </div>
+                            <div class="space-y-1">
+                                <h3 class="text-sm font-bold text-slate-200">Start Your AR Trace</h3>
+                                <p class="text-xs text-slate-400 max-w-xs leading-relaxed">Upload an image on the left, and let our engine prepare the clean drawing templates for tracing on paper.</p>
+                            </div>
+                        </div>
+
+                        <!-- Canvas Preloader -->
+                        <div id="canvas-loader" class="absolute inset-0 bg-slate-950/80 backdrop-blur-sm flex flex-col items-center justify-center gap-3 hidden z-20">
+                            <div class="relative w-12 h-12">
+                                <div class="absolute inset-0 border-4 border-brand-500/20 rounded-full"></div>
+                                <div class="absolute inset-0 border-4 border-t-brand-500 rounded-full animate-spin"></div>
+                            </div>
+                            <p class="text-xs text-brand-300 font-semibold tracking-wider">Processing image pixels...</p>
+                        </div>
+                    </div>
+
+                    <!-- Sandbox Interactive Control Bar (Appears when processed or active) -->
+                    <div id="ar-overlay-controls" class="bg-slate-950 border-t border-slate-900 p-4 space-y-4 hidden z-30">
+                        
+                        <!-- Slider UI (Transparency Controls) -->
+                        <div class="flex flex-col gap-2">
+                            <div class="flex justify-between items-center text-xs font-semibold">
+                                <div class="flex items-center gap-2 text-slate-300">
+                                    <i data-lucide="eye" class="w-4 h-4 text-brand-400"></i>
+                                    <span>Overlay Transparency</span>
+                                </div>
+                                <span id="transparency-badge" class="bg-brand-950/50 text-brand-400 border border-brand-900 font-mono px-2 py-0.5 rounded-md font-bold">50%</span>
+                            </div>
+                            <div class="flex items-center gap-3">
+                                <span class="text-[10px] font-bold text-slate-500">20%</span>
+                                <input type="range" id="transparency-slider" min="20" max="80" value="50" class="flex-1 h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-brand-500">
+                                <span class="text-[10px] font-bold text-slate-500">80%</span>
+                            </div>
+                        </div>
+
+                        <!-- Calibration Fine-tunes (Reset position, Mirror flip) -->
+                        <div class="flex flex-wrap items-center justify-between gap-3 pt-1 border-t border-slate-900/50">
+                            <div class="flex items-center gap-2">
+                                <button type="button" id="reset-position-btn" class="p-2 bg-slate-900 hover:bg-slate-800 border border-slate-800 rounded-lg text-slate-300 hover:text-white text-xs font-bold transition flex items-center gap-1.5 touch-active" title="Center overlay design">
+                                    <i data-lucide="maximize" class="w-3.5 h-3.5"></i>
+                                    Center Template
+                                </button>
+                                <button type="button" id="mirror-btn" class="p-2 bg-slate-900 hover:bg-slate-800 border border-slate-800 rounded-lg text-slate-300 hover:text-white text-xs font-bold transition flex items-center gap-1.5 touch-active" title="Flip template sideways">
+                                    <i data-lucide="arrow-left-right" class="w-3.5 h-3.5"></i>
+                                    Flip Horizontal
+                                </button>
+                            </div>
+                            
+                            <!-- Camera Activation Core Trigger -->
+                            <button id="activate-ar-btn" class="flex-1 md:flex-initial bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs px-4 py-2.5 rounded-lg shadow-lg shadow-emerald-950/20 transition-all flex items-center justify-center gap-2 touch-active">
+                                <i data-lucide="video" class="w-4 h-4"></i>
+                                <span id="camera-btn-text">Start Camera Mode</span>
+                            </button>
+                        </div>
+
+                    </div>
+                </div>
+
+                <!-- Live AR Tracing Assistant / Instructions -->
+                <div class="bg-slate-900/40 border border-slate-900 rounded-2xl p-4 flex gap-3.5 items-start">
+                    <div class="bg-brand-950/50 text-brand-400 p-2.5 rounded-xl border border-brand-900/30 shrink-0">
+                        <i data-lucide="help-circle" class="w-5 h-5"></i>
+                    </div>
+                    <div>
+                        <h4 class="text-xs font-bold text-slate-200">AR Setup Guide:</h4>
+                        <ul class="list-disc list-inside text-[11px] text-slate-400 mt-1.5 space-y-1">
+                            <li>Place your physical paper flat under your phone/tablet setup.</li>
+                            <li>Mount your phone/tablet on a stand, glass, or tall cup facing downward.</li>
+                            <li>Align the live paper with the digital trace lines using your screen controls.</li>
+                            <li>Trace lines directly on the physical paper through your screen viewport.</li>
+                        </ul>
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+    </main>
+
+    <!-- Hidden native file elements for offline image holding -->
+    <canvas id="temp-processing-canvas" class="hidden"></canvas>
+
+    <!-- App Footer -->
+    <footer class="border-t border-slate-900 mt-12 bg-slate-950/60 py-6 text-center text-xs text-slate-500">
+        <p>© 2026 AR Studio By Mohammed Sulthan G. Fully client-side client processing. Built with Canvas API.</p>
+    </footer>
+
+    <script>
+        // --- APP STATE MANAGEMENT ---
+        const AppState = {
+            currentStep: 1, // 1: Upload, 2: Processed, 3: AR Tracing Ready
+            originalImage: null, // HTMLImageElement
+            fileName: '',
+            processedLineData: null, // Image data elements for canvas
+            isCameraOn: false,
+            cameraStream: null,
+            // AR overlay transformation parameters
+            overlayScale: 1.0,
+            overlayX: 0,
+            overlayY: 0,
+            overlayMirrored: false,
+            isDragging: false,
+            startX: 0,
+            startY: 0
+        };
+
+        // --- CORE HTML ELEMENTS ---
+        const dropZone = document.getElementById('drop-zone');
+        const fileInput = document.getElementById('image-upload');
+        const uploadPrompt = document.getElementById('upload-prompt');
+        const uploadPreviewContainer = document.getElementById('upload-preview-container');
+        const uploadedImgPreview = document.getElementById('uploaded-img-preview');
+        const fileNameEl = document.getElementById('file-name');
+        const fileSizeEl = document.getElementById('file-size');
+        const fileInfoEl = document.getElementById('file-info');
+
+        const processingControlsBox = document.getElementById('processing-controls-box');
+        const thresholdSlider = document.getElementById('threshold-slider');
+        const thresholdVal = document.getElementById('threshold-val');
+        const smoothOnBtn = document.getElementById('smoothing-on');
+        const smoothOffBtn = document.getElementById('smoothing-off');
+        const processCtaBtn = document.getElementById('process-cta-btn');
+
+        const suitabilityBox = document.getElementById('suitability-box');
+        const suitabilityDensity = document.getElementById('suitability-density');
+        const suitabilityVerdict = document.getElementById('suitability-verdict');
+        const suitabilityBar = document.getElementById('suitability-bar');
+        const suitabilityIcon = document.getElementById('suitability-icon');
+
+        const canvasStatusText = document.getElementById('canvas-status-text');
+        const cameraStateBadge = document.getElementById('camera-state-badge');
+        const viewportContainer = document.getElementById('viewport-container');
+        const webcamStream = document.getElementById('webcam-stream');
+        const canvasWrapper = document.getElementById('canvas-wrapper');
+        const outputCanvas = document.getElementById('output-canvas');
+        const emptyState = document.getElementById('empty-state');
+        const canvasLoader = document.getElementById('canvas-loader');
+        const arOverlayControls = document.getElementById('ar-overlay-controls');
+        const interactionHelper = document.getElementById('interaction-helper');
+
+        const transparencySlider = document.getElementById('transparency-slider');
+        const transparencyBadge = document.getElementById('transparency-badge');
+        const resetPositionBtn = document.getElementById('reset-position-btn');
+        const mirrorBtn = document.getElementById('mirror-btn');
+        const activateArBtn = document.getElementById('activate-ar-btn');
+        const cameraBtnText = document.getElementById('camera-btn-text');
+
+        // Step-Indicators
+        const steps = {
+            1: { ind: document.getElementById('step-1-indicator'), badge: document.getElementById('step-1-badge'), text: document.getElementById('step-1-text') },
+            2: { ind: document.getElementById('step-2-indicator'), badge: document.getElementById('step-2-badge'), text: document.getElementById('step-2-text') },
+            3: { ind: document.getElementById('step-3-indicator'), badge: document.getElementById('step-3-badge'), text: document.getElementById('step-3-text') }
+        };
+        const stepLines = {
+            1: document.getElementById('step-line-1'),
+            2: document.getElementById('step-line-2')
+        };
+
+        // --- SYSTEM INITS ---
+        window.addEventListener('DOMContentLoaded', () => {
+            // Setup icons
+            lucide.createIcons();
+            
+            // Wire listeners
+            setupUploadListeners();
+            setupProcessingListeners();
+            setupARControlListeners();
+            setupInteractiveDragListeners();
+        });
+
+        // --- STEP WIZARD NAVIGATION UI ---
+        function updateStepIndicator(step) {
+            AppState.currentStep = step;
+            
+            // Loop steps to apply active, completed, or disabled styles
+            for (let i = 1; i <= 3; i++) {
+                const s = steps[i];
+                if (i < step) {
+                    // Completed Steps
+                    s.ind.classList.remove('opacity-40');
+                    s.badge.className = "w-6 h-6 rounded-full bg-emerald-600 flex items-center justify-center font-bold text-white text-[11px]";
+                    s.badge.innerHTML = `<i data-lucide="check" class="w-3.5 h-3.5 text-white"></i>`;
+                    s.text.className = "font-semibold text-emerald-400";
+                } else if (i === step) {
+                    // Current Step
+                    s.ind.classList.remove('opacity-40');
+                    s.badge.className = "w-6 h-6 rounded-full bg-brand-600 flex items-center justify-center font-bold text-white text-[11px]";
+                    s.badge.innerText = i;
+                    s.text.className = "font-semibold text-white";
+                } else {
+                    // Inactive Steps
+                    s.ind.classList.add('opacity-40');
+                    s.badge.className = "w-6 h-6 rounded-full bg-slate-800 flex items-center justify-center font-bold text-slate-400 text-[11px]";
+                    s.badge.innerText = i;
+                    s.text.className = "font-semibold text-slate-400";
+                }
+            }
+
+            // Step lines color indicators
+            if (stepLines[1]) {
+                stepLines[1].className = `w-8 h-[2px] shrink-0 mx-2 ${step > 1 ? 'bg-emerald-600/60' : 'bg-slate-800'}`;
+            }
+            if (stepLines[2]) {
+                stepLines[2].className = `w-8 h-[2px] shrink-0 mx-2 ${step > 2 ? 'bg-emerald-600/60' : 'bg-slate-800'}`;
+            }
+
+            lucide.createIcons();
+        }
+
+        // --- TOAST WARNINGS SYSTEM ---
+        function showToast(message) {
+            const toastContainer = document.getElementById('toast-container');
+            const toastMessage = document.getElementById('toast-message');
+            
+            toastMessage.innerText = message;
+            toastContainer.classList.remove('hidden');
+            
+            // Animate in
+            setTimeout(() => {
+                toastContainer.classList.remove('opacity-0', 'translate-y-[-20px]');
+                toastContainer.classList.add('opacity-100', 'translate-y-0');
+            }, 10);
+
+            // Auto dismiss after 7s
+            setTimeout(() => {
+                hideToast();
+            }, 7000);
+        }
+
+        function hideToast() {
+            const toastContainer = document.getElementById('toast-container');
+            toastContainer.classList.remove('opacity-100', 'translate-y-0');
+            toastContainer.classList.add('opacity-0', 'translate-y-[-20px]');
+            setTimeout(() => {
+                toastContainer.classList.add('hidden');
+            }, 300);
+        }
+
+        // --- INITIAL UPLOADS LOGIC ---
+        function setupUploadListeners() {
+            // Drag over effects
+            ['dragenter', 'dragover'].forEach(eventName => {
+                dropZone.addEventListener(eventName, (e) => {
+                    e.preventDefault();
+                    dropZone.classList.add('border-brand-500', 'bg-slate-950/80');
+                }, false);
+            });
+
+            ['dragleave', 'drop'].forEach(eventName => {
+                dropZone.addEventListener(eventName, (e) => {
+                    e.preventDefault();
+                    dropZone.classList.remove('border-brand-500', 'bg-slate-950/80');
+                }, false);
+            });
+
+            // Handle dropped files
+            dropZone.addEventListener('drop', (e) => {
+                const dt = e.dataTransfer;
+                const files = dt.files;
+                if (files.length) handleImageSelection(files[0]);
+            });
+
+            // Normal upload selection
+            fileInput.addEventListener('change', (e) => {
+                if (e.target.files.length) handleImageSelection(e.target.files[0]);
+            });
+        }
+
+        function handleImageSelection(file) {
+            // Validate MIME type
+            if (!file.type.startsWith('image/')) {
+                showToast("Invalid file type uploaded. Please choose a valid image file (PNG, JPG, WEBP).");
+                return;
+            }
+
+            AppState.fileName = file.name;
+            const fileSizeKB = Math.round(file.size / 1024);
+
+            // Setup UI for Loading State
+            canvasLoader.classList.remove('hidden');
+            emptyState.classList.add('hidden');
+
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                const img = new Image();
+                img.onload = () => {
+                    AppState.originalImage = img;
+                    
+                    // Display mini metadata preview inside drop-zone
+                    uploadedImgPreview.src = event.target.result;
+                    uploadPrompt.classList.add('hidden');
+                    uploadPreviewContainer.classList.remove('hidden');
+
+                    fileNameEl.innerText = file.name;
+                    fileSizeEl.innerText = `${fileSizeKB} KB`;
+                    fileInfoEl.classList.remove('hidden');
+
+                    // Activate configuration controls card
+                    processingControlsBox.classList.remove('opacity-50', 'pointer-events-none');
+                    
+                    // Draw raw to primary canvas
+                    drawToOutputCanvas(img);
+                    
+                    canvasLoader.classList.add('hidden');
+                    canvasStatusText.innerText = "Source Image Loaded";
+                    updateStepIndicator(2);
+                };
+                img.onerror = () => {
+                    canvasLoader.classList.add('hidden');
+                    showToast("Failed to load and read image data. The file might be corrupted.");
+                };
+                img.src = event.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        // --- PROCESSING PIPELINE: SKETCH LINE EXTRACTION ---
+        let isSmoothEnabled = true;
+
+        function setupProcessingListeners() {
+            // Range slider UI synchronization
+            thresholdSlider.addEventListener('input', (e) => {
+                thresholdVal.innerText = e.target.value;
+            });
+
+            // Smooth toggle state controls
+            smoothOnBtn.addEventListener('click', () => {
+                isSmoothEnabled = true;
+                smoothOnBtn.className = "px-3 py-1.5 rounded-lg border-2 border-brand-500 bg-brand-950/20 text-xs font-bold text-brand-300 transition-all";
+                smoothOffBtn.className = "px-3 py-1.5 rounded-lg border border-slate-800 bg-slate-950 text-xs font-bold text-slate-500 hover:text-slate-300 hover:border-slate-700 transition-all";
+            });
+
+            smoothOffBtn.addEventListener('click', () => {
+                isSmoothEnabled = false;
+                smoothOffBtn.className = "px-3 py-1.5 rounded-lg border-2 border-brand-500 bg-brand-950/20 text-xs font-bold text-brand-300 transition-all";
+                smoothOnBtn.className = "px-3 py-1.5 rounded-lg border border-slate-800 bg-slate-950 text-xs font-bold text-slate-500 hover:text-slate-300 hover:border-slate-700 transition-all";
+            });
+
+            processCtaBtn.addEventListener('click', () => {
+                if (!AppState.originalImage) {
+                    showToast("Please upload an image first before extracting line art.");
+                    return;
+                }
+                processImageAndGenerateLines();
+            });
+        }
+
+        function drawToOutputCanvas(imageElement) {
+            const ctx = outputCanvas.getContext('2d');
+            
+            // Adjust canvas sizing to match loaded aspect ratio while keeping dimensions robust
+            const targetWidth = imageElement.naturalWidth || imageElement.width;
+            const targetHeight = imageElement.naturalHeight || imageElement.height;
+            
+            // Normalize sizing bounds for fast browser pixel iterations
+            const maxDimension = 1000;
+            let finalWidth = targetWidth;
+            let finalHeight = targetHeight;
+
+            if (targetWidth > maxDimension || targetHeight > maxDimension) {
+                if (targetWidth > targetHeight) {
+                    finalWidth = maxDimension;
+                    finalHeight = Math.round((targetHeight * maxDimension) / targetWidth);
+                } else {
+                    finalHeight = maxDimension;
+                    finalWidth = Math.round((targetWidth * maxDimension) / targetHeight);
+                }
+            }
+
+            outputCanvas.width = finalWidth;
+            outputCanvas.height = finalHeight;
+            
+            ctx.drawImage(imageElement, 0, 0, finalWidth, finalHeight);
+        }
+
+        function processImageAndGenerateLines() {
+            canvasLoader.classList.remove('hidden');
+
+            // Timeout so standard browser redraw handles loading indicators first
+            setTimeout(() => {
+                try {
+                    // Reset standard canvas with original dimensions
+                    drawToOutputCanvas(AppState.originalImage);
+
+                    const ctx = outputCanvas.getContext('2d', { willReadFrequently: true });
+                    const width = outputCanvas.width;
+                    const height = outputCanvas.height;
+
+                    const imgData = ctx.getImageData(0, 0, width, height);
+                    const pixels = imgData.data;
+
+                    // Step 1: Pre-allocating Grayscale Canvas Data
+                    const grayBuffer = new Uint8ClampedArray(width * height);
+                    for (let i = 0; i < pixels.length; i += 4) {
+                        const r = pixels[i];
+                        const g = pixels[i + 1];
+                        const b = pixels[i + 2];
+                        // High precision perceptual luminance conversion
+                        const luminance = 0.299 * r + 0.587 * g + 0.114 * b;
+                        grayBuffer[i / 4] = luminance;
+                    }
+
+                    // Step 2: Adaptive Sobel Edge Detection
+                    const edgeData = ctx.createImageData(width, height);
+                    const edgePixels = edgeData.data;
+                    const threshold = parseInt(thresholdSlider.value, 10);
+                    
+                    let edgePixelCounter = 0; // Tracking active lines for suitability diagnostic engine
+
+                    // Sobel Kernels
+                    // Gx = [[-1, 0, 1], [-2, 0, 2], [-1, 0, 1]]
+                    // Gy = [[-1, -2, -1], [0, 0, 0], [1, 2, 1]]
+                    for (let y = 1; y < height - 1; y++) {
+                        for (let x = 1; x < width - 1; x++) {
+                            const idx = y * width + x;
+
+                            // Pixel matrix values around index
+                            const p00 = grayBuffer[(y - 1) * width + (x - 1)];
+                            const p01 = grayBuffer[(y - 1) * width + x];
+                            const p02 = grayBuffer[(y - 1) * width + (x + 1)];
+                            
+                            const p10 = grayBuffer[y * width + (x - 1)];
+                            const p12 = grayBuffer[y * width + (x + 1)];
+                            
+                            const p20 = grayBuffer[(y + 1) * width + (x - 1)];
+                            const p21 = grayBuffer[(y + 1) * width + x];
+                            const p22 = grayBuffer[(y + 1) * width + (x + 1)];
+
+                            // Calculate horizontal gradient
+                            const gx = (p02 + 2 * p12 + p22) - (p00 + 2 * p10 + p20);
+                            // Calculate vertical gradient
+                            const gy = (p20 + 2 * p21 + p22) - (p00 + 2 * p01 + p02);
+
+                            // Gradient magnitude
+                            const magnitude = Math.sqrt(gx * gx + gy * gy);
+
+                            const pixelIndex = idx * 4;
+
+                            // Apply thresholding config: binary (Black sketch outlines on White background)
+                            if (magnitude > threshold) {
+                                // Draw black for edges
+                                edgePixels[pixelIndex] = 0;
+                                edgePixels[pixelIndex + 1] = 0;
+                                edgePixels[pixelIndex + 2] = 0;
+                                edgePixels[pixelIndex + 3] = 255; // Full opacity
+                                edgePixelCounter++;
+                            } else {
+                                // Background - solid white for trace paper clarity
+                                edgePixels[pixelIndex] = 255;
+                                edgePixels[pixelIndex + 1] = 255;
+                                edgePixels[pixelIndex + 2] = 255;
+                                edgePixels[pixelIndex + 3] = 255; // Solid opaque
+                            }
+                        }
+                    }
+
+                    // Handle edge padding
+                    for (let x = 0; x < width; x++) {
+                        // Top and bottom row boundaries
+                        const topIdx = x * 4;
+                        const bottomIdx = ((height - 1) * width + x) * 4;
+                        setPixelWhite(edgePixels, topIdx);
+                        setPixelWhite(edgePixels, bottomIdx);
+                    }
+                    for (let y = 0; y < height; y++) {
+                        // Left and right column boundaries
+                        const leftIdx = (y * width) * 4;
+                        const rightIdx = (y * width + (width - 1)) * 4;
+                        setPixelWhite(edgePixels, leftIdx);
+                        setPixelWhite(edgePixels, rightIdx);
+                    }
+
+                    // Optional Step 3: Low Pass Filtering (Blur/Smoothing) for trace ease
+                    if (isSmoothEnabled) {
+                        smoothEdges(edgePixels, width, height);
+                    }
+
+                    // Write processed pixels back
+                    ctx.putImageData(edgeData, 0, 0);
+
+                    // Perform Intelligent Image Suitability Diagnostics
+                    const totalUsablePixels = width * height;
+                    const edgeRatioPercentage = (edgePixelCounter / totalUsablePixels) * 100;
+
+                    evaluateImageSuitability(edgeRatioPercentage);
+
+                    // Re-initialize default sizing scale on output
+                    resetARScale();
+
+                } catch (err) {
+                    console.error(err);
+                    showToast("Trace image process failed. Try a smaller file size.");
+                } finally {
+                    canvasLoader.classList.add('hidden');
+                }
+            }, 100);
+        }
+
+        function setPixelWhite(pixelsArray, index) {
+            pixelsArray[index] = 255;
+            pixelsArray[index + 1] = 255;
+            pixelsArray[index + 2] = 255;
+            pixelsArray[index + 3] = 255;
+        }
+
+        // Box blur-inspired edge smoothing function
+        function smoothEdges(pixels, width, height) {
+            const buffer = new Uint8ClampedArray(pixels);
+            const radius = 1;
+            
+            for (let y = radius; y < height - radius; y++) {
+                for (let x = radius; x < width - radius; x++) {
+                    const idx = (y * width + x) * 4;
+                    
+                    // Simple box blur to smooth out aliased pixel jaggedness
+                    let rSum = 0, gSum = 0, bSum = 0;
+                    let count = 0;
+
+                    for (let ky = -radius; ky <= radius; ky++) {
+                        for (let kx = -radius; kx <= radius; kx++) {
+                            const kidx = ((y + ky) * width + (x + kx)) * 4;
+                            rSum += buffer[kidx];
+                            gSum += buffer[kidx + 1];
+                            bSum += buffer[kidx + 2];
+                            count++;
+                        }
+                    }
+
+                    const avgR = rSum / count;
+                    // If local neighborhood is darker, turn pixel black (edge preservation)
+                    if (avgR < 200) {
+                        pixels[idx] = 0;
+                        pixels[idx + 1] = 0;
+                        pixels[idx + 2] = 0;
+                    } else {
+                        pixels[idx] = 255;
+                        pixels[idx + 1] = 255;
+                        pixels[idx + 2] = 255;
+                    }
+                }
+            }
+        }
+
+        // --- IMAGE DIAGNOSTICS ENGINE ---
+        function evaluateImageSuitability(densityPercentage) {
+            suitabilityBox.classList.remove('hidden');
+            
+            // Format percentage beautifully
+            const formattedPercent = densityPercentage.toFixed(2);
+            suitabilityDensity.innerText = `${formattedPercent}%`;
+            
+            // Update Visual Progress Level Meter
+            suitabilityBar.style.width = `${Math.min(densityPercentage * 12, 100)}%`;
+
+            // Threshold Diagnosis evaluation:
+            // Needs to have at least some visual outline edges detected (> 0.25%) but not an entirely messy texture (> 28%)
+            if (densityPercentage < 0.25) {
+                // FAILED OUTLINE INTENSITY
+                suitabilityVerdict.innerText = "Poor Edge Detail";
+                suitabilityVerdict.className = "font-bold text-red-500";
+                suitabilityIcon.className = "w-4 h-4 text-red-500";
+                suitabilityBar.className = "bg-red-500 h-full w-full transition-all duration-500";
+                
+                showToast("This image does not contain enough visible outlines for tracing. Please increase edge slider or upload a clearer template.");
+                
+                // Don't auto block them, but guide the step down to configure again
+                updateStepIndicator(2);
+                arOverlayControls.classList.add('hidden');
+            } else if (densityPercentage > 35.0) {
+                // OVERLOADED NOISY OUTLINES
+                suitabilityVerdict.innerText = "Highly Complex";
+                suitabilityVerdict.className = "font-bold text-amber-500";
+                suitabilityIcon.className = "w-4 h-4 text-amber-500";
+                suitabilityBar.className = "bg-amber-500 h-full w-full transition-all duration-500";
+                
+                showToast("Highly complex textures detected. Consider turning down threshold slider for cleaner physical outlines.");
+                
+                showActiveARControls();
+            } else {
+                // HEALTHY OUTLINE DETECTION SUCCESS
+                suitabilityVerdict.innerText = "Excellent Trace";
+                suitabilityVerdict.className = "font-bold text-emerald-400";
+                suitabilityIcon.className = "w-4 h-4 text-emerald-400";
+                suitabilityBar.className = "bg-emerald-500 h-full transition-all duration-500";
+                
+                showActiveARControls();
+            }
+        }
+
+        function showActiveARControls() {
+            arOverlayControls.classList.remove('hidden');
+            canvasStatusText.innerText = "Sketch Ready for AR Overlay";
+            updateStepIndicator(3);
+
+            // Pulse activate highlight for starting camera
+            activateArBtn.classList.add('animate-pulse');
+            setTimeout(() => {
+                activateArBtn.classList.remove('animate-pulse');
+            }, 3000);
+        }
+
+        // --- AR CONTROLS ENGINE (TRANSPARENCY & MATRIX ACTIONS) ---
+        function setupARControlListeners() {
+            // Live opacity update
+            transparencySlider.addEventListener('input', (e) => {
+                const opacityPercent = e.target.value;
+                transparencyBadge.innerText = `${opacityPercent}%`;
+                
+                // Map 20% - 80% directly to HTML canvas elements opacity filter values
+                canvasWrapper.style.opacity = opacityPercent / 100;
+            });
+
+            // Center / Reset position action
+            resetPositionBtn.addEventListener('click', resetARScale);
+
+            // Horizontal orientation toggles
+            mirrorBtn.addEventListener('click', () => {
+                AppState.overlayMirrored = !AppState.overlayMirrored;
+                updateCanvasTransformations();
+            });
+
+            // Video toggler
+            activateArBtn.addEventListener('click', toggleARCameraStream);
+        }
+
+        function resetARScale() {
+            AppState.overlayScale = 1.0;
+            AppState.overlayX = 0;
+            AppState.overlayY = 0;
+            updateCanvasTransformations();
+        }
+
+        function updateCanvasTransformations() {
+            const mirrorValue = AppState.overlayMirrored ? '-1' : '1';
+            canvasWrapper.style.transform = `translate(${AppState.overlayX}px, ${AppState.overlayY}px) scale(${AppState.overlayScale}) scaleX(${mirrorValue})`;
+        }
+
+        // --- INTEGRATED HARDWARE WEBCAM HANDLING ---
+        async function toggleARCameraStream() {
+            if (AppState.isCameraOn) {
+                stopCameraStream();
+            } else {
+                await startCameraStream();
+            }
+        }
+
+        async function startCameraStream() {
+            canvasLoader.classList.remove('hidden');
+            cameraBtnText.innerText = "Initializing Device...";
+
+            const constraints = {
+                audio: false,
+                video: {
+                    facingMode: { ideal: "environment" }, // Prioritize high-quality rear cameras for drawing setups
+                    width: { ideal: 1280 },
+                    height: { ideal: 720 }
+                }
+            };
+
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia(constraints);
+                
+                AppState.cameraStream = stream;
+                webcamStream.srcObject = stream;
+                
+                webcamStream.onloadedmetadata = () => {
+                    webcamStream.classList.remove('hidden');
+                    cameraStateBadge.classList.remove('hidden');
+                    interactionHelper.classList.remove('hidden');
+                    interactionHelper.classList.add('opacity-100');
+                    canvasStatusText.innerText = "Active Camera Blend Mode";
+                    
+                    AppState.isCameraOn = true;
+                    activateArBtn.className = "flex-1 md:flex-initial bg-red-600 hover:bg-red-500 text-white font-bold text-xs px-4 py-2.5 rounded-lg shadow-lg shadow-red-950/20 transition-all flex items-center justify-center gap-2 touch-active";
+                    cameraBtnText.innerText = "Close Camera Mode";
+                    
+                    canvasLoader.classList.add('hidden');
+                };
+
+            } catch (error) {
+                console.error("Camera access failed: ", error);
+                canvasLoader.classList.add('hidden');
+                cameraBtnText.innerText = "Start Camera Mode";
+                
+                let feedbackMessage = "Camera initialization blocked. Please allow permissions in your system settings.";
+                if (error.name === 'NotFoundError' || error.name === 'DevicesNotFoundError') {
+                    feedbackMessage = "No active camera device was detected on your mobile device/PC.";
+                } else if (error.name === 'NotAllowedError') {
+                    feedbackMessage = "Access to device camera was denied. Please unlock permission controls.";
+                }
+                
+                showToast(feedbackMessage);
+            }
+        }
+
+        function stopCameraStream() {
+            if (AppState.cameraStream) {
+                const tracks = AppState.cameraStream.getTracks();
+                tracks.forEach(track => track.stop());
+            }
+            
+            webcamStream.srcObject = null;
+            webcamStream.classList.add('hidden');
+            cameraStateBadge.classList.add('hidden');
+            interactionHelper.classList.add('hidden');
+            interactionHelper.classList.remove('opacity-100');
+            canvasStatusText.innerText = "Sketch Ready for AR Overlay";
+
+            AppState.isCameraOn = false;
+            activateArBtn.className = "flex-1 md:flex-initial bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs px-4 py-2.5 rounded-lg shadow-lg shadow-emerald-950/20 transition-all flex items-center justify-center gap-2 touch-active";
+            cameraBtnText.innerText = "Start Camera Mode";
+        }
+
+        // --- AR VIEWPORT SPATIAL INTERACTIONS (PAN / PINCH / MOUSEWHEEL) ---
+        function setupInteractiveDragListeners() {
+            const container = viewportContainer;
+
+            // Touch events for mobile trace screens
+            let lastTouchDistance = 0;
+
+            container.addEventListener('touchstart', (e) => {
+                if (AppState.currentStep < 3) return;
+
+                if (e.touches.length === 1) {
+                    AppState.isDragging = true;
+                    AppState.startX = e.touches[0].clientX - AppState.overlayX;
+                    AppState.startY = e.touches[0].clientY - AppState.overlayY;
+                } else if (e.touches.length === 2) {
+                    // Start dual pinch gesture metrics
+                    AppState.isDragging = false;
+                    lastTouchDistance = getDistanceBetweenTouches(e.touches);
+                }
+            }, { passive: true });
+
+            container.addEventListener('touchmove', (e) => {
+                if (AppState.currentStep < 3) return;
+
+                if (e.touches.length === 1 && AppState.isDragging) {
+                    AppState.overlayX = e.touches[0].clientX - AppState.startX;
+                    AppState.overlayY = e.touches[0].clientY - AppState.startY;
+                    updateCanvasTransformations();
+                } else if (e.touches.length === 2) {
+                    // Pinch scale zoom calculations
+                    const currentDistance = getDistanceBetweenTouches(e.touches);
+                    if (lastTouchDistance > 0) {
+                        const scaleMultiplier = currentDistance / lastTouchDistance;
+                        // Constrain scaling limits
+                        AppState.overlayScale = Math.min(Math.max(AppState.overlayScale * scaleMultiplier, 0.2), 4.5);
+                        updateCanvasTransformations();
+                    }
+                    lastTouchDistance = currentDistance;
+                }
+            }, { passive: true });
+
+            container.addEventListener('touchend', () => {
+                AppState.isDragging = false;
+                lastTouchDistance = 0;
+            });
+
+            // Desktop Mouse dragging listeners
+            container.addEventListener('mousedown', (e) => {
+                if (AppState.currentStep < 3) return;
+                AppState.isDragging = true;
+                AppState.startX = e.clientX - AppState.overlayX;
+                AppState.startY = e.clientY - AppState.overlayY;
+            });
+
+            window.addEventListener('mousemove', (e) => {
+                if (AppState.currentStep < 3 || !AppState.isDragging) return;
+                AppState.overlayX = e.clientX - AppState.startX;
+                AppState.overlayY = e.clientY - AppState.startY;
+                updateCanvasTransformations();
+            });
+
+            window.addEventListener('mouseup', () => {
+                AppState.isDragging = false;
+            });
+
+            // Mouse wheel scroll to scale control
+            container.addEventListener('wheel', (e) => {
+                if (AppState.currentStep < 3) return;
+                e.preventDefault(); // Stop entire page from scrolling while inside viewer
+                
+                const scaleFactor = 0.08;
+                if (e.deltaY < 0) {
+                    // Zoom In
+                    AppState.overlayScale = Math.min(AppState.overlayScale + scaleFactor, 4.5);
+                } else {
+                    // Zoom Out
+                    AppState.overlayScale = Math.max(AppState.overlayScale - scaleFactor, 0.2);
+                }
+                updateCanvasTransformations();
+            }, { passive: false });
+        }
+
+        function getDistanceBetweenTouches(touches) {
+            return Math.hypot(
+                touches[0].clientX - touches[1].clientX,
+                touches[0].clientY - touches[1].clientY
+            );
+        }
+    </script>
+</body>
+</html>
