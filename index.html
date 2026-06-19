@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>AR Drawing & Tracing Studio</title>
+    <title>AR Studio By Mohammed Sulthan G</title>
     <!-- Tailwind CSS for modern rapid layouts -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Lucide Icons for premium visual cues -->
@@ -45,6 +45,21 @@
             transform: scale(0.97);
             transition: transform 0.1s ease;
         }
+        
+        /* Immersive Full Screen overlay overrides */
+        #viewport-container.is-fullscreen {
+            position: fixed !important;
+            top: 0 !important;
+            left: 0 !important;
+            width: 100vw !important;
+            height: 100vh !important;
+            max-width: 100vw !important;
+            max-height: 100vh !important;
+            z-index: 9999 !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            border-radius: 0 !important;
+        }
     </style>
 </head>
 <body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col font-sans overflow-x-hidden antialiased selection:bg-brand-500 selection:text-white">
@@ -70,8 +85,8 @@
 
     <main class="flex-1 flex flex-col max-w-4xl mx-auto w-full p-4 gap-6">
 
-        <!-- Error & Alert Toast System (Self-contained Custom Modals instead of blocking alerts) -->
-        <div id="toast-container" class="fixed top-4 left-1/2 -translate-x-1/2 z-50 w-full max-w-sm px-4 pointer-events-none transition-all duration-300 transform translate-y-[-20px] opacity-0 hidden">
+        <!-- Error & Alert Toast System -->
+        <div id="toast-container" class="fixed top-4 left-1/2 -translate-x-1/2 z-[10000] w-full max-w-sm px-4 pointer-events-none transition-all duration-300 transform translate-y-[-20px] opacity-0 hidden">
             <div class="bg-slate-900 border-2 border-red-500/40 text-red-200 p-4 rounded-2xl shadow-2xl shadow-red-950/50 pointer-events-auto flex gap-3 items-start">
                 <div class="bg-red-500/20 text-red-400 p-2 rounded-lg shrink-0">
                     <i data-lucide="alert-triangle" class="w-5 h-5"></i>
@@ -241,7 +256,7 @@
                     <!-- Core Visual Container -->
                     <div class="flex-1 relative bg-slate-950 flex items-center justify-center p-2 overflow-hidden select-none" id="viewport-container">
                         
-                        <!-- Video Stream Element (Behind the transparent canvas) -->
+                        <!-- Video Stream Element -->
                         <video id="webcam-stream" autoplay playsinline muted class="absolute inset-0 w-full h-full object-cover hidden scale-x-[-1]"></video>
                         
                         <!-- AR Canvas overlay containing the extracted lines -->
@@ -249,12 +264,49 @@
                             <canvas id="output-canvas" class="max-w-full max-h-full object-contain pointer-events-none drop-shadow-[0_0_15px_rgba(0,0,0,0.8)]"></canvas>
                         </div>
 
-                        <!-- Calibration / Drag Instructions Layer (Appears once AR active) -->
-                        <div id="interaction-helper" class="absolute bottom-4 left-4 right-4 bg-slate-950/90 backdrop-blur border border-slate-800 rounded-xl p-3 text-center pointer-events-none transition opacity-0 hidden">
+                        <!-- Calibration / Drag Instructions Layer -->
+                        <div id="interaction-helper" class="absolute bottom-4 left-4 right-4 bg-slate-950/90 backdrop-blur border border-slate-800 rounded-xl p-3 text-center pointer-events-none transition opacity-0 hidden z-10">
                             <p class="text-[10px] text-slate-300 font-medium flex items-center justify-center gap-2">
                                 <i data-lucide="move" class="w-3.5 h-3.5 text-brand-400"></i>
                                 Touch & drag overlay to position. Use wheel/pinch to resize.
                             </p>
+                        </div>
+
+                        <!-- Floating HUD Overlay for Full Screen Mode -->
+                        <div id="fullscreen-hud" class="absolute inset-x-0 bottom-6 px-4 z-50 flex flex-col gap-3 pointer-events-none opacity-0 hidden transition-all duration-300">
+                            <!-- Floating controls card -->
+                            <div class="bg-slate-950/95 backdrop-blur-md border border-slate-800 p-4 rounded-2xl shadow-2xl max-w-md mx-auto w-full pointer-events-auto flex flex-col gap-3">
+                                <!-- Top row: Transparency slider & Percentage -->
+                                <div class="flex flex-col gap-1.5">
+                                    <div class="flex justify-between items-center text-xs font-semibold">
+                                        <div class="flex items-center gap-1.5 text-slate-300">
+                                            <i data-lucide="eye" class="w-3.5 h-3.5 text-brand-400"></i>
+                                            <span>Overlay Transparency</span>
+                                        </div>
+                                        <span id="fs-transparency-badge" class="bg-brand-950/50 text-brand-400 border border-brand-900 font-mono px-1.5 py-0.5 rounded text-[11px] font-bold">50%</span>
+                                    </div>
+                                    <div class="flex items-center gap-2">
+                                        <span class="text-[9px] font-bold text-slate-500">20%</span>
+                                        <input type="range" id="fs-transparency-slider" min="20" max="80" value="50" class="flex-1 h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-brand-500">
+                                        <span class="text-[9px] font-bold text-slate-500">80%</span>
+                                    </div>
+                                </div>
+                                <!-- Bottom row: Reset, Mirror & Exit (Back) -->
+                                <div class="flex items-center justify-between gap-2 pt-1.5 border-t border-slate-800/50">
+                                    <button type="button" id="fs-reset-btn" class="p-2 bg-slate-900 hover:bg-slate-800 border border-slate-800 rounded-lg text-slate-300 hover:text-white text-[11px] font-semibold transition flex items-center gap-1 touch-active">
+                                        <i data-lucide="maximize" class="w-3 h-3"></i>
+                                        Center Design
+                                    </button>
+                                    <button type="button" id="fs-mirror-btn" class="p-2 bg-slate-900 hover:bg-slate-800 border border-slate-800 rounded-lg text-slate-300 hover:text-white text-[11px] font-semibold transition flex items-center gap-1 touch-active">
+                                        <i data-lucide="arrow-left-right" class="w-3 h-3"></i>
+                                        Flip Horizontally
+                                    </button>
+                                    <button type="button" id="fs-exit-btn" class="p-2 bg-red-950/40 hover:bg-red-900/40 border border-red-900/30 text-red-400 hover:text-red-300 rounded-lg text-[11px] font-bold transition flex items-center gap-1.5 ml-auto touch-active">
+                                        <i data-lucide="arrow-left" class="w-3.5 h-3.5"></i>
+                                        Exit Full Screen
+                                    </button>
+                                </div>
+                            </div>
                         </div>
 
                         <!-- Empty Welcome / Placeholder State -->
@@ -278,7 +330,7 @@
                         </div>
                     </div>
 
-                    <!-- Sandbox Interactive Control Bar (Appears when processed or active) -->
+                    <!-- Sandbox Interactive Control Bar -->
                     <div id="ar-overlay-controls" class="bg-slate-950 border-t border-slate-900 p-4 space-y-4 hidden z-30">
                         
                         <!-- Slider UI (Transparency Controls) -->
@@ -310,11 +362,18 @@
                                 </button>
                             </div>
                             
-                            <!-- Camera Activation Core Trigger -->
-                            <button id="activate-ar-btn" class="flex-1 md:flex-initial bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs px-4 py-2.5 rounded-lg shadow-lg shadow-emerald-950/20 transition-all flex items-center justify-center gap-2 touch-active">
-                                <i data-lucide="video" class="w-4 h-4"></i>
-                                <span id="camera-btn-text">Start Camera Mode</span>
-                            </button>
+                            <!-- Camera Activation Trigger Controls -->
+                            <div class="flex items-center gap-2 flex-1 md:flex-initial justify-end">
+                                <button id="activate-ar-btn" class="flex-1 md:flex-initial bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs px-4 py-2.5 rounded-lg shadow-lg shadow-emerald-950/20 transition-all flex items-center justify-center gap-2 touch-active">
+                                    <i data-lucide="video" class="w-4 h-4"></i>
+                                    <span id="camera-btn-text">Start Camera Mode</span>
+                                </button>
+                                
+                                <button id="fullscreen-btn" class="hidden bg-brand-600 hover:bg-brand-500 text-white font-bold text-xs px-4 py-2.5 rounded-lg shadow-lg shadow-brand-950/20 transition-all flex items-center justify-center gap-2 touch-active">
+                                    <i data-lucide="expand" class="w-4 h-4"></i>
+                                    <span>Immersive Full Screen</span>
+                                </button>
+                            </div>
                         </div>
 
                     </div>
@@ -346,7 +405,7 @@
 
     <!-- App Footer -->
     <footer class="border-t border-slate-900 mt-12 bg-slate-950/60 py-6 text-center text-xs text-slate-500">
-        <p>© 2026 AR Studio By Mohammed Sulthan G. Fully client-side client processing. Built with Canvas API.</p>
+        <p>© 2026 AR Studio By Mohammed Sulthan G. Fully client-side trace processing. Built with Canvas API.</p>
     </footer>
 
     <script>
@@ -355,9 +414,10 @@
             currentStep: 1, // 1: Upload, 2: Processed, 3: AR Tracing Ready
             originalImage: null, // HTMLImageElement
             fileName: '',
-            processedLineData: null, // Image data elements for canvas
+            processedLineData: null,
             isCameraOn: false,
             cameraStream: null,
+            isFullscreen: false,
             // AR overlay transformation parameters
             overlayScale: 1.0,
             overlayX: 0,
@@ -408,6 +468,15 @@
         const mirrorBtn = document.getElementById('mirror-btn');
         const activateArBtn = document.getElementById('activate-ar-btn');
         const cameraBtnText = document.getElementById('camera-btn-text');
+        
+        // Fullscreen Elements
+        const fullscreenBtn = document.getElementById('fullscreen-btn');
+        const fullscreenHud = document.getElementById('fullscreen-hud');
+        const fsTransparencySlider = document.getElementById('fs-transparency-slider');
+        const fsTransparencyBadge = document.getElementById('fs-transparency-badge');
+        const fsResetBtn = document.getElementById('fs-reset-btn');
+        const fsMirrorBtn = document.getElementById('fs-mirror-btn');
+        const fsExitBtn = document.getElementById('fs-exit-btn');
 
         // Step-Indicators
         const steps = {
@@ -430,6 +499,7 @@
             setupProcessingListeners();
             setupARControlListeners();
             setupInteractiveDragListeners();
+            setupFullscreenListeners();
         });
 
         // --- STEP WIZARD NAVIGATION UI ---
@@ -671,9 +741,6 @@
                     
                     let edgePixelCounter = 0; // Tracking active lines for suitability diagnostic engine
 
-                    // Sobel Kernels
-                    // Gx = [[-1, 0, 1], [-2, 0, 2], [-1, 0, 1]]
-                    // Gy = [[-1, -2, -1], [0, 0, 0], [1, 2, 1]]
                     for (let y = 1; y < height - 1; y++) {
                         for (let x = 1; x < width - 1; x++) {
                             const idx = y * width + x;
@@ -720,21 +787,19 @@
 
                     // Handle edge padding
                     for (let x = 0; x < width; x++) {
-                        // Top and bottom row boundaries
                         const topIdx = x * 4;
                         const bottomIdx = ((height - 1) * width + x) * 4;
                         setPixelWhite(edgePixels, topIdx);
                         setPixelWhite(edgePixels, bottomIdx);
                     }
                     for (let y = 0; y < height; y++) {
-                        // Left and right column boundaries
                         const leftIdx = (y * width) * 4;
                         const rightIdx = (y * width + (width - 1)) * 4;
                         setPixelWhite(edgePixels, leftIdx);
                         setPixelWhite(edgePixels, rightIdx);
                     }
 
-                    // Optional Step 3: Low Pass Filtering (Blur/Smoothing) for trace ease
+                    // Optional Step 3: Low Pass Filtering
                     if (isSmoothEnabled) {
                         smoothEdges(edgePixels, width, height);
                     }
@@ -776,7 +841,6 @@
                 for (let x = radius; x < width - radius; x++) {
                     const idx = (y * width + x) * 4;
                     
-                    // Simple box blur to smooth out aliased pixel jaggedness
                     let rSum = 0, gSum = 0, bSum = 0;
                     let count = 0;
 
@@ -791,7 +855,6 @@
                     }
 
                     const avgR = rSum / count;
-                    // If local neighborhood is darker, turn pixel black (edge preservation)
                     if (avgR < 200) {
                         pixels[idx] = 0;
                         pixels[idx + 1] = 0;
@@ -809,17 +872,12 @@
         function evaluateImageSuitability(densityPercentage) {
             suitabilityBox.classList.remove('hidden');
             
-            // Format percentage beautifully
             const formattedPercent = densityPercentage.toFixed(2);
             suitabilityDensity.innerText = `${formattedPercent}%`;
             
-            // Update Visual Progress Level Meter
             suitabilityBar.style.width = `${Math.min(densityPercentage * 12, 100)}%`;
 
-            // Threshold Diagnosis evaluation:
-            // Needs to have at least some visual outline edges detected (> 0.25%) but not an entirely messy texture (> 28%)
             if (densityPercentage < 0.25) {
-                // FAILED OUTLINE INTENSITY
                 suitabilityVerdict.innerText = "Poor Edge Detail";
                 suitabilityVerdict.className = "font-bold text-red-500";
                 suitabilityIcon.className = "w-4 h-4 text-red-500";
@@ -827,11 +885,9 @@
                 
                 showToast("This image does not contain enough visible outlines for tracing. Please increase edge slider or upload a clearer template.");
                 
-                // Don't auto block them, but guide the step down to configure again
                 updateStepIndicator(2);
                 arOverlayControls.classList.add('hidden');
             } else if (densityPercentage > 35.0) {
-                // OVERLOADED NOISY OUTLINES
                 suitabilityVerdict.innerText = "Highly Complex";
                 suitabilityVerdict.className = "font-bold text-amber-500";
                 suitabilityIcon.className = "w-4 h-4 text-amber-500";
@@ -841,7 +897,6 @@
                 
                 showActiveARControls();
             } else {
-                // HEALTHY OUTLINE DETECTION SUCCESS
                 suitabilityVerdict.innerText = "Excellent Trace";
                 suitabilityVerdict.className = "font-bold text-emerald-400";
                 suitabilityIcon.className = "w-4 h-4 text-emerald-400";
@@ -856,7 +911,6 @@
             canvasStatusText.innerText = "Sketch Ready for AR Overlay";
             updateStepIndicator(3);
 
-            // Pulse activate highlight for starting camera
             activateArBtn.classList.add('animate-pulse');
             setTimeout(() => {
                 activateArBtn.classList.remove('animate-pulse');
@@ -865,26 +919,41 @@
 
         // --- AR CONTROLS ENGINE (TRANSPARENCY & MATRIX ACTIONS) ---
         function setupARControlListeners() {
-            // Live opacity update
+            // Live opacity update - Standard slider
             transparencySlider.addEventListener('input', (e) => {
                 const opacityPercent = e.target.value;
                 transparencyBadge.innerText = `${opacityPercent}%`;
+                fsTransparencySlider.value = opacityPercent;
+                fsTransparencyBadge.innerText = `${opacityPercent}%`;
                 
-                // Map 20% - 80% directly to HTML canvas elements opacity filter values
+                canvasWrapper.style.opacity = opacityPercent / 100;
+            });
+
+            // Live opacity update - Fullscreen slider
+            fsTransparencySlider.addEventListener('input', (e) => {
+                const opacityPercent = e.target.value;
+                fsTransparencyBadge.innerText = `${opacityPercent}%`;
+                transparencySlider.value = opacityPercent;
+                transparencyBadge.innerText = `${opacityPercent}%`;
+                
                 canvasWrapper.style.opacity = opacityPercent / 100;
             });
 
             // Center / Reset position action
             resetPositionBtn.addEventListener('click', resetARScale);
+            fsResetBtn.addEventListener('click', resetARScale);
 
             // Horizontal orientation toggles
-            mirrorBtn.addEventListener('click', () => {
-                AppState.overlayMirrored = !AppState.overlayMirrored;
-                updateCanvasTransformations();
-            });
+            mirrorBtn.addEventListener('click', toggleMirror);
+            fsMirrorBtn.addEventListener('click', toggleMirror);
 
             // Video toggler
             activateArBtn.addEventListener('click', toggleARCameraStream);
+        }
+
+        function toggleMirror() {
+            AppState.overlayMirrored = !AppState.overlayMirrored;
+            updateCanvasTransformations();
         }
 
         function resetARScale() {
@@ -915,7 +984,7 @@
             const constraints = {
                 audio: false,
                 video: {
-                    facingMode: { ideal: "environment" }, // Prioritize high-quality rear cameras for drawing setups
+                    facingMode: { ideal: "environment" },
                     width: { ideal: 1280 },
                     height: { ideal: 720 }
                 }
@@ -932,6 +1001,7 @@
                     cameraStateBadge.classList.remove('hidden');
                     interactionHelper.classList.remove('hidden');
                     interactionHelper.classList.add('opacity-100');
+                    fullscreenBtn.classList.remove('hidden');
                     canvasStatusText.innerText = "Active Camera Blend Mode";
                     
                     AppState.isCameraOn = true;
@@ -945,6 +1015,7 @@
                 console.error("Camera access failed: ", error);
                 canvasLoader.classList.add('hidden');
                 cameraBtnText.innerText = "Start Camera Mode";
+                fullscreenBtn.classList.add('hidden');
                 
                 let feedbackMessage = "Camera initialization blocked. Please allow permissions in your system settings.";
                 if (error.name === 'NotFoundError' || error.name === 'DevicesNotFoundError') {
@@ -968,18 +1039,86 @@
             cameraStateBadge.classList.add('hidden');
             interactionHelper.classList.add('hidden');
             interactionHelper.classList.remove('opacity-100');
+            fullscreenBtn.classList.add('hidden');
             canvasStatusText.innerText = "Sketch Ready for AR Overlay";
 
             AppState.isCameraOn = false;
             activateArBtn.className = "flex-1 md:flex-initial bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs px-4 py-2.5 rounded-lg shadow-lg shadow-emerald-950/20 transition-all flex items-center justify-center gap-2 touch-active";
             cameraBtnText.innerText = "Start Camera Mode";
+            
+            // Auto-exit fullscreen if camera is closed
+            toggleFullscreen(false);
+        }
+
+        // --- FULL SCREEN IMMERSION LOGIC ---
+        function setupFullscreenListeners() {
+            fullscreenBtn.addEventListener('click', () => {
+                toggleFullscreen(true);
+            });
+
+            fsExitBtn.addEventListener('click', () => {
+                toggleFullscreen(false);
+            });
+
+            // Fallback: Listen to Esc or Native UI Close Actions
+            document.addEventListener('fullscreenchange', syncNativeFullscreenExit);
+            document.addEventListener('webkitfullscreenchange', syncNativeFullscreenExit);
+        }
+
+        function toggleFullscreen(show) {
+            AppState.isFullscreen = show;
+            if (show) {
+                viewportContainer.classList.add('is-fullscreen');
+                fullscreenHud.classList.remove('hidden');
+                setTimeout(() => {
+                    fullscreenHud.classList.remove('opacity-0');
+                    fullscreenHud.classList.add('opacity-100', 'pointer-events-auto');
+                }, 50);
+
+                // Try requesting browser viewport element lock (especially useful on Android Chrome)
+                try {
+                    if (viewportContainer.requestFullscreen) {
+                        viewportContainer.requestFullscreen();
+                    } else if (viewportContainer.webkitRequestFullscreen) {
+                        viewportContainer.webkitRequestFullscreen();
+                    }
+                } catch (err) {
+                    console.log("Native system fullscreen was skipped, relying on full CSS-fixed fallback overlay mode.");
+                }
+            } else {
+                viewportContainer.classList.remove('is-fullscreen');
+                fullscreenHud.classList.add('opacity-0');
+                fullscreenHud.classList.remove('pointer-events-auto');
+                setTimeout(() => {
+                    fullscreenHud.classList.add('hidden');
+                }, 300);
+
+                // Exit native browser full screen mode
+                try {
+                    if (document.exitFullscreen && document.fullscreenElement) {
+                        document.exitFullscreen();
+                    } else if (document.webkitExitFullscreen && document.webkitFullscreenElement) {
+                        document.webkitExitFullscreen();
+                    }
+                } catch (err) {
+                    // Ignore non-active full screen dismiss states
+                }
+            }
+            
+            // Recalculate layout alignment helper states
+            resetARScale();
+        }
+
+        function syncNativeFullscreenExit() {
+            const isNativeFSActive = document.fullscreenElement || document.webkitFullscreenElement;
+            if (!isNativeFSActive && AppState.isFullscreen) {
+                toggleFullscreen(false);
+            }
         }
 
         // --- AR VIEWPORT SPATIAL INTERACTIONS (PAN / PINCH / MOUSEWHEEL) ---
         function setupInteractiveDragListeners() {
             const container = viewportContainer;
-
-            // Touch events for mobile trace screens
             let lastTouchDistance = 0;
 
             container.addEventListener('touchstart', (e) => {
@@ -990,7 +1129,6 @@
                     AppState.startX = e.touches[0].clientX - AppState.overlayX;
                     AppState.startY = e.touches[0].clientY - AppState.overlayY;
                 } else if (e.touches.length === 2) {
-                    // Start dual pinch gesture metrics
                     AppState.isDragging = false;
                     lastTouchDistance = getDistanceBetweenTouches(e.touches);
                 }
@@ -1004,11 +1142,9 @@
                     AppState.overlayY = e.touches[0].clientY - AppState.startY;
                     updateCanvasTransformations();
                 } else if (e.touches.length === 2) {
-                    // Pinch scale zoom calculations
                     const currentDistance = getDistanceBetweenTouches(e.touches);
                     if (lastTouchDistance > 0) {
                         const scaleMultiplier = currentDistance / lastTouchDistance;
-                        // Constrain scaling limits
                         AppState.overlayScale = Math.min(Math.max(AppState.overlayScale * scaleMultiplier, 0.2), 4.5);
                         updateCanvasTransformations();
                     }
@@ -1021,7 +1157,6 @@
                 lastTouchDistance = 0;
             });
 
-            // Desktop Mouse dragging listeners
             container.addEventListener('mousedown', (e) => {
                 if (AppState.currentStep < 3) return;
                 AppState.isDragging = true;
@@ -1040,17 +1175,14 @@
                 AppState.isDragging = false;
             });
 
-            // Mouse wheel scroll to scale control
             container.addEventListener('wheel', (e) => {
                 if (AppState.currentStep < 3) return;
-                e.preventDefault(); // Stop entire page from scrolling while inside viewer
+                e.preventDefault();
                 
                 const scaleFactor = 0.08;
                 if (e.deltaY < 0) {
-                    // Zoom In
                     AppState.overlayScale = Math.min(AppState.overlayScale + scaleFactor, 4.5);
                 } else {
-                    // Zoom Out
                     AppState.overlayScale = Math.max(AppState.overlayScale - scaleFactor, 0.2);
                 }
                 updateCanvasTransformations();
